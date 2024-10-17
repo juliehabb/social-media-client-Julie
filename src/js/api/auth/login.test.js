@@ -1,5 +1,5 @@
 // login.test.js
-import { login } from "./login";
+import { login } from "./login.js";
 import { save } from "../../storage/index.js";
 
 jest.mock("../../storage/index.js");
