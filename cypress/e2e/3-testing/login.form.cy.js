@@ -1,38 +1,40 @@
-describe("Login Form", () => {
+describe("Login Form - Valid Credentials", () => {
   beforeEach(() => {
-    // Mock the login API response
-    cy.intercept("POST", "/social/auth/login", {
-      statusCode: 200,
-      body: {
-        accessToken: "fakeToken",
-        name: "John Doe",
-      },
-    }).as("loginRequest");
+    cy.visit("/index.html");
   });
 
   it("should log in with valid credentials and redirect to the profile page", () => {
-    // Visit the root index.html page
-    cy.visit("/index.html");
+    // Intercept the login request with a valid response
+    cy.intercept("POST", "**/auth/login", {
+      statusCode: 200,
+      body: {
+        token: "validToken123",
+        profile: { email: "valid@stud.noroff.no", name: "Valid User" },
+      },
+    }).as("loginRequest");
 
-    // Fill in the login form
-    cy.get("#email").type("test@example.com"); // Use the id selector
-    cy.get("#password").type("password123"); // Use the id selector
+    // Open the login modal
+    cy.get('button[data-bs-target="#loginModal"]').first().click();
+
+    // Fill in the login form with valid credentials
+    cy.get("#loginEmail").type("valid@stud.noroff.no");
+    cy.get("#loginPassword").type("validpassword");
 
     // Submit the login form
-    cy.get("form").submit();
+    cy.get("#loginForm").submit();
 
-    // Wait for the mock login API request to resolve
+    // Wait for the login request to complete
     cy.wait("@loginRequest");
 
-    // Check if the token and profile were saved in localStorage
+    // Check localStorage for the token
     cy.window().then((win) => {
-      expect(win.localStorage.getItem("token")).to.eq("fakeToken");
-      expect(win.localStorage.getItem("profile")).to.eq(
-        JSON.stringify({ name: "John Doe" }),
-      );
+      expect(win.localStorage.getItem("token")).to.eq("validToken123");
+      const profile = JSON.parse(win.localStorage.getItem("profile"));
+      expect(profile).to.have.property("email", "valid@stud.noroff.no");
     });
 
-    // Verify redirection to the profile page
-    cy.url().should("include", "/?view=profile&name=John%20Doe");
+    // Check URL and page content
+    cy.url().should("include", "/profile");
+    cy.contains("Valid User");
   });
 });
